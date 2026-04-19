@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using System.Windows.Forms;
 
-namespace DevHealthMonitor;
+namespace PulsarPlay;
 
 public class PortInfo
 {
@@ -274,7 +274,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "projects.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "projects.json");
             if (File.Exists(path))
             {
                 var lines = File.ReadAllText(path).Split('\n');
@@ -672,7 +672,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "projects.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "projects.json");
             if (File.Exists(path))
             {
                 var lines = File.ReadAllText(path).Split('\n');
@@ -725,7 +725,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "projects.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "projects.json");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             
             var lines = new List<string>();
@@ -744,7 +744,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "ports.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "ports.json");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var lines = _portInfos.Where(p => !string.IsNullOrEmpty(p.Command))
                 .Select(p => p.Port + "|" + p.Folder + "|" + p.Command);
@@ -757,7 +757,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "ports.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "ports.json");
             if (File.Exists(path))
             {
                 var json = File.ReadAllText(path);
@@ -785,7 +785,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "commands.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "commands.json");
             if (File.Exists(path))
             {
                 var json = File.ReadAllText(path);
@@ -810,7 +810,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "commands.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "commands.json");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             var lines = _customCommands.Select(c => c.Name + ":" + c.Command);
             File.WriteAllText(path, string.Join("\n", lines));
@@ -1077,12 +1077,12 @@ public partial class MainWindow : Window
 
             if (startupCheck.IsChecked == true)
             {
-                try { Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true).SetValue("DevHealthMonitor", System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName); }
+                try { Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true).SetValue("PulsarPlay", System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName); }
                 catch { }
             }
             else
             {
-                try { Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true).DeleteValue("DevHealthMonitor", false); }
+                try { Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true).DeleteValue("PulsarPlay", false); }
                 catch { }
             }
 
@@ -1134,7 +1134,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "settings.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "settings.json");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path, $"{{\"ramWarning\":{_ramWarning},\"ramCritical\":{_ramCritical},\"cpuWarning\":{_cpuWarning},\"cpuCritical\":{_cpuCritical}}}");
         }
@@ -1145,7 +1145,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DevHealthMonitor", "settings.json");
+            string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PulsarPlay", "settings.json");
             if (File.Exists(path))
             {
                 var json = File.ReadAllText(path);

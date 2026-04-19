@@ -74,12 +74,12 @@ bin\Release\net8.0-windows\PulsarPlay.exe
 
 Projects are stored in:
 ```
-%APPDATA%\DevHealthMonitor\projects.json
+%APPDATA%\PulsarPlay\projects.json
 ```
 
 Commands are stored in:
 ```
-%APPDATA%\DevHealthMonitor\commands.json
+%APPDATA%\PulsarPlay\commands.json
 ```
 
 ## Contribution

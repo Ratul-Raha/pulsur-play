@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace DevHealthMonitor;
+namespace PulsarPlay;
 
 public partial class App : Application
 {

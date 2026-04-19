@@ -6,7 +6,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <Nullable>enable</Nullable>
     <ApplicationIcon />
-    <StartupObject>DevHealthMonitor.App</StartupObject>
+    <StartupObject>PulsarPlay.App</StartupObject>
     <AssemblyName>PulsarPlay</AssemblyName>
     <Version>1.0.0</Version>
   </PropertyGroup>
