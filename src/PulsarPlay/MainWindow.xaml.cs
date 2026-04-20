@@ -1802,8 +1802,11 @@ totalSizeText.Text = FormatBytes(totalSize);
     private void GitCommit_Click(object sender, RoutedEventArgs e)
     {
         var btn = sender as System.Windows.Controls.Button;
-        var path = btn?.Tag?.ToString();
-        if (path != null) GitCliOutput.Text += RunGitCommand(path, "git add . && git commit -m \"Update\"") + "\n";
+        var commitPanel = FindCommitPanelByButton(btn);
+        if (commitPanel != null)
+        {
+            commitPanel.Visibility = commitPanel.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+        }
     }
 
     private void GitRefresh_Click(object sender, RoutedEventArgs e)
