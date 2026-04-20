@@ -340,7 +340,8 @@ public partial class MainWindow : Window
         }
         catch { }
         
-        ActivePortsList.ItemsSource = _activePorts.ToList();
+        if (ActivePortsList != null)
+            ActivePortsList.ItemsSource = _activePorts.ToList();
     }
 
     private string GetProcessName(string pid)
@@ -803,7 +804,8 @@ public partial class MainWindow : Window
             }
         }
         catch { }
-        CommandList.ItemsSource = _customCommands.ToList();
+        if (CommandList != null)
+            CommandList.ItemsSource = _customCommands.ToList();
     }
 
     private void SaveCommands()
@@ -936,17 +938,15 @@ public partial class MainWindow : Window
 
     private void MaximizeBtn_Click(object sender, RoutedEventArgs e)
     {
-        if (Width > 700)
+        if (WindowState == WindowState.Maximized)
         {
+            WindowState = WindowState.Normal;
             Width = 450;
             Height = 620;
-            WindowState = WindowState.Normal;
         }
         else
         {
-            Width = 1200;
-            Height = 700;
-            WindowState = WindowState.Normal;
+            WindowState = WindowState.Maximized;
         }
     }
 
@@ -1552,6 +1552,41 @@ totalSizeText.Text = FormatBytes(totalSize);
         SendOpenCodeCommand();
     }
 
+    private void UrlBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter)
+        {
+            NavigateToUrl();
+        }
+    }
+
+    private void GoBtn_Click(object sender, RoutedEventArgs e)
+    {
+        NavigateToUrl();
+    }
+
+    private async void NavigateToUrl()
+    {
+        var url = MaxUrlBox?.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(url)) return;
+
+        if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+        {
+            url = "https://" + url;
+        }
+
+        try
+        {
+            if (MaxWebView != null)
+            {
+                await MaxWebView.EnsureCoreWebView2Async();
+                MaxWebView.CoreWebView2.Navigate(url);
+            }
+            _currentBrowserUrl = url;
+        }
+        catch { }
+    }
+
     private void OpenCodeInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.Enter)
@@ -1588,6 +1623,50 @@ totalSizeText.Text = FormatBytes(totalSize);
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
+        if (WindowState == WindowState.Maximized)
+        {
+            ShowMaximizedLayout();
+        }
+        else
+        {
+            ShowMinimizedLayout();
+        }
+
+        PositionWindow();
+        LoadProjectSettings();
+        if (PortListMax != null)
+            PortListMax.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+        RefreshPorts();
+        LoadCommands();
+        UpdateMetrics();
+    }
+
+    private void Window_StateChanged(object sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            ShowMaximizedLayout();
+        }
+        else
+        {
+            ShowMinimizedLayout();
+        }
+    }
+
+    private void ShowMaximizedLayout()
+    {
+        MinimizedLayout.Visibility = Visibility.Collapsed;
+        MaximizedLayout.Visibility = Visibility.Visible;
+    }
+
+    private void ShowMinimizedLayout()
+    {
+        MinimizedLayout.Visibility = Visibility.Visible;
+        MaximizedLayout.Visibility = Visibility.Collapsed;
+    }
+
+    public MainWindow()
+    {
         try
         {
             _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
@@ -1602,12 +1681,6 @@ totalSizeText.Text = FormatBytes(totalSize);
         _updateTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _updateTimer.Tick += (s, args) => UpdateMetrics();
         _updateTimer.Start();
-
-        PositionWindow();
-        LoadProjectSettings();
-        RefreshPorts();
-        LoadCommands();
-        UpdateMetrics();
     }
 
     private void UpdateMetrics()
@@ -1639,6 +1712,17 @@ totalSizeText.Text = FormatBytes(totalSize);
                 DiskDetails.Text = $"R:{diskRead:F1} / W:{diskWrite:F1}";
                 TopProcesses.ItemsSource = topProcesses;
                 LastUpdate.Text = $"Updated: {DateTime.Now:HH:mm:ss}";
+
+                if (MaxCpuPercent != null) MaxCpuPercent.Text = $"{(int)cpuVal}%";
+                if (MaxCpuBar != null) MaxCpuBar.Value = cpuVal;
+                if (MaxCpuDetails != null) MaxCpuDetails.Text = $"{(int)cpuVal}%";
+                if (MaxRamPercent != null) MaxRamPercent.Text = $"{(int)ramPercent}%";
+                if (MaxRamBar != null) MaxRamBar.Value = ramPercent;
+                if (MaxRamDetails != null) MaxRamDetails.Text = $"{usedMem:F1} / {totalMem:F1} GB";
+                if (MaxDiskPercent != null) MaxDiskPercent.Text = $"C: {diskTotal:F1} MB/s";
+                if (MaxDiskBar != null) MaxDiskBar.Value = diskTotal;
+                if (MaxDiskDetails != null) MaxDiskDetails.Text = $"R:{diskRead:F1} / W:{diskWrite:F1}";
+                if (MaxNetDetails != null) MaxNetDetails.Text = $"{(int)(diskTotal)} MB/s";
             });
         }
         catch { }
