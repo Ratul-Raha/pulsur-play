@@ -59,6 +59,7 @@ public class ProjectInfo
     public string VercelProjectName { get; set; } = "";
     public string Type { get; set; } = "frontend";
     public bool IsSelected { get; set; }
+    public bool IsRunning { get; set; }  // Track if project is running in terminal
     public List<ProjectInfo> Children { get; set; } = new();
 }
 
@@ -135,15 +136,28 @@ public partial class MainWindow : Window
         {
             try
             {
-                var psi = new System.Diagnostics.ProcessStartInfo("cmd", "/c cd /d \"" + proj.Path + "\" && " + proj.Command)
+                // Get or create terminal for this project
+                if (!_terminals.TryGetValue(proj.Path, out var terminal))
                 {
-                    UseShellExecute = true,
-                    WorkingDirectory = proj.Path
-                };
-                System.Diagnostics.Process.Start(psi);
+                    terminal = new TerminalService();
+                    terminal.OutputReceived += output => Dispatcher.Invoke(() => AppendTerminalOutput(output, proj.Path));
+                    terminal.ErrorReceived += error => Dispatcher.Invoke(() => AppendTerminalOutput(error, proj.Path));
+                    _terminals[proj.Path] = terminal;
+                    _ = terminal.StartAsync("powershell.exe", proj.Path);
+                }
+
+                // Send the project start command to the terminal
+                terminal.SendCommand(proj.Command);
+                proj.IsRunning = true;
                 LogAction($"Project started: {proj.Name} on port {proj.Port}", "success");
+                
+                // Update terminal header to show running status
+                if (proj.Path == _selectedProjectPath && TerminalHeader != null)
+                {
+                    TerminalHeader.Text = $"Terminal - {proj.Name} [RUNNING ◉]";
+                }
             }
-            catch
+            catch (Exception ex)
             {
                 LogAction($"Failed to start project: {proj.Name}", "error");
             }
@@ -187,17 +201,25 @@ public partial class MainWindow : Window
         var proj = _projects.FirstOrDefault(p => p.Path == path);
         if (proj == null) return;
 
-        if (!string.IsNullOrEmpty(proj.Pid) && int.TryParse(proj.Pid, out int pid))
+        try
         {
-            try
+            // Send Ctrl+C to gracefully stop the project in its terminal
+            if (_terminals.TryGetValue(proj.Path, out var terminal))
             {
-                System.Diagnostics.Process.GetProcessById(pid).Kill();
+                terminal.SendCommand("\u0003");  // Ctrl+C
+                proj.IsRunning = false;
                 LogAction($"Project stopped: {proj.Name} (port {proj.Port})", "warning");
+                
+                // Update terminal header if this project is currently displayed
+                if (proj.Path == _selectedProjectPath && TerminalHeader != null)
+                {
+                    TerminalHeader.Text = $"Terminal - {proj.Name}";
+                }
             }
-            catch
-            {
-                LogAction($"Failed to stop project: {proj.Name}", "error");
-            }
+        }
+        catch
+        {
+            LogAction($"Failed to stop project: {proj.Name}", "error");
         }
     }
 
@@ -471,23 +493,33 @@ public partial class MainWindow : Window
                     {
                         _ = MaxWebView.EnsureCoreWebView2Async();
                         MaxWebView.CoreWebView2?.Navigate(url);
+                        SetupBrowserLogging();  // Enable browser console/network capture
+                        StartTimelineRefresh();  // Start polling timer
                     }
                 }
                 catch { }
             }
         }
 
+        // Create terminal if not exists, but DON'T restart it if already running
         if (!_terminals.TryGetValue(proj.Path, out var terminal))
         {
             terminal = new TerminalService();
             terminal.OutputReceived += output => Dispatcher.Invoke(() => AppendTerminalOutput(output, proj.Path));
             terminal.ErrorReceived += error => Dispatcher.Invoke(() => AppendTerminalOutput(error, proj.Path));
             _terminals[proj.Path] = terminal;
+            _ = terminal.StartAsync("powershell.exe", proj.Path);
         }
 
-        _ = terminal.StartAsync("powershell.exe", proj.Path);
-        TerminalHeader.Text = $"Terminal - {proj.Name}";
-        TerminalOutput.Text = $"Terminal ready for {proj.Name}\nWorking directory: {proj.Path}\n";
+        // Update terminal display with status
+        TerminalHeader.Text = proj.IsRunning ? $"Terminal - {proj.Name} [RUNNING ◉]" : $"Terminal - {proj.Name}";
+        
+        // Switch browser logging to this project's WebView
+        if (proj.Type?.ToLower() != "backend")
+        {
+            SetupBrowserLogging();
+            StartTimelineRefresh();
+        }
 
         if (!string.IsNullOrEmpty(proj.VercelProjectName) || !string.IsNullOrEmpty(proj.VercelProjectId))
         {
@@ -507,6 +539,24 @@ public partial class MainWindow : Window
         if (_selectedProjectPath != projectPath) return;
         TerminalOutput.Text += text;
         TerminalScroll.ScrollToEnd();
+    }
+
+    private void ClearConsole_Click(object sender, RoutedEventArgs e)
+    {
+        if (TimelineLogs != null)
+            TimelineLogs.Text = "Console cleared.\n";
+    }
+
+    private void ClearTerminal_Click(object sender, RoutedEventArgs e)
+    {
+        if (TerminalOutput != null)
+            TerminalOutput.Text = "Terminal cleared.\n";
+    }
+
+    private void ClearNetwork_Click(object sender, RoutedEventArgs e)
+    {
+        if (NetworkLogs != null)
+            NetworkLogs.Text = "Network logs cleared.\n";
     }
 
     private void TerminalInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -1789,14 +1839,38 @@ totalSizeText.Text = FormatBytes(totalSize);
                 {
                     var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(logs);
                     if (parsed != null)
-                        TimelineLogs.Text = string.Join("\n", parsed.Take(50));
+                    {
+                        // APPEND browser logs (Plan B - simple approach)
+                        foreach (var entry in parsed)
+                        {
+                            if (!string.IsNullOrEmpty(entry) && !TimelineLogs.Text.Contains(entry))
+                                TimelineLogs.Text += entry + "\n";
+                        }
+                        // Keep last 100 lines only
+                        var lines = TimelineLogs.Text.Split('\n');
+                        if (lines.Length > 100)
+                            TimelineLogs.Text = string.Join("\n", lines.Skip(lines.Length - 100));
+                        TimelineScroll.ScrollToEnd();
+                    }
                 }
 
                 if (NetworkLogs != null && !string.IsNullOrEmpty(net) && net != "[]")
                 {
                     var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(net);
                     if (parsed != null)
-                        NetworkLogs.Text = string.Join("\n", parsed.Take(50));
+                    {
+                        // APPEND network logs
+                        foreach (var entry in parsed)
+                        {
+                            if (!string.IsNullOrEmpty(entry) && !NetworkLogs.Text.Contains(entry))
+                                NetworkLogs.Text += entry + "\n";
+                        }
+                        // Keep last 50 lines only
+                        var lines = NetworkLogs.Text.Split('\n');
+                        if (lines.Length > 50)
+                            NetworkLogs.Text = string.Join("\n", lines.Skip(lines.Length - 50));
+                        NetworkScroll.ScrollToEnd();
+                    }
                 }
             });
         }

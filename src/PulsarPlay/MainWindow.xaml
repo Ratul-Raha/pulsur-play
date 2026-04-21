@@ -528,7 +528,10 @@
                                     <RowDefinition Height="25"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="Console" Foreground="#DCDCAA" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
+                                <Grid Grid.Row="0">
+                                    <TextBlock Text="Console" Foreground="#DCDCAA" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0" VerticalAlignment="Center"/>
+                                    <Button x:Name="ClearConsoleBtn" Content="✕" Width="20" Height="18" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontSize="11" Click="ClearConsole_Click" HorizontalAlignment="Right" Margin="0,0,5,0" Cursor="Hand" ToolTip="Clear console"/>
+                                </Grid>
                                 <ScrollViewer Grid.Row="1" x:Name="TimelineScroll" VerticalScrollBarVisibility="Auto">
                                     <TextBlock x:Name="TimelineLogs" Text="Console output will appear here" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="5"/>
                                 </ScrollViewer>
@@ -542,7 +545,10 @@
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" x:Name="TerminalHeader" Text="Terminal" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
+                                <Grid Grid.Row="0">
+                                    <TextBlock x:Name="TerminalHeader" Text="Terminal" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0" VerticalAlignment="Center"/>
+                                    <Button x:Name="ClearTerminalBtn" Content="✕" Width="20" Height="18" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontSize="11" Click="ClearTerminal_Click" HorizontalAlignment="Right" Margin="0,0,5,0" Cursor="Hand" ToolTip="Clear terminal"/>
+                                </Grid>
                                 <ScrollViewer Grid.Row="1" x:Name="TerminalScroll" VerticalScrollBarVisibility="Auto">
                                     <TextBlock x:Name="TerminalOutput" Text="Click a project to open terminal" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="5"/>
                                 </ScrollViewer>
@@ -559,7 +565,10 @@
                                     <RowDefinition Height="25"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Text="Network" Foreground="#569CD6" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
+                                <Grid Grid.Row="0">
+                                    <TextBlock Text="Network" Foreground="#569CD6" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0" VerticalAlignment="Center"/>
+                                    <Button x:Name="ClearNetworkBtn" Content="✕" Width="20" Height="18" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontSize="11" Click="ClearNetwork_Click" HorizontalAlignment="Right" Margin="0,0,5,0" Cursor="Hand" ToolTip="Clear network"/>
+                                </Grid>
                                 <ScrollViewer Grid.Row="1" x:Name="NetworkScroll" VerticalScrollBarVisibility="Auto">
                                     <TextBlock x:Name="NetworkLogs" Text="Network requests will appear here" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="5"/>
                                 </ScrollViewer>
