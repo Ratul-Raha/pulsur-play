@@ -18,7 +18,6 @@ public class ProjectInfo
     public string Path { get; set; } = "";
     public string Port { get; set; } = "";
     public string Command { get; set; } = "";
-    public string OpenCodeCommand { get; set; } = "";
     public bool IsActive { get; set; }
     public string Pid { get; set; } = "";
     public bool IsParent { get; set; }

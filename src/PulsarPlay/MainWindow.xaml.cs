@@ -13,6 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 using System.Windows.Forms;
+using PulsarPlay.Services;
 
 namespace PulsarPlay;
 
@@ -32,7 +33,6 @@ public class ProjectInfo
     public string Path { get; set; } = "";
     public string Port { get; set; } = "";
     public string Command { get; set; } = "";
-    public string OpenCodeCommand { get; set; } = "";
     public bool IsActive { get; set; }
     public string Pid { get; set; } = "";
     public bool IsParent { get; set; }
@@ -81,10 +81,10 @@ public partial class MainWindow : Window
     private readonly List<ProjectInfo> _projects = new();
     private readonly List<PortInfo> _activePorts = new();
     private string _rootFolder = "";
+    private readonly SystemMonitorService _systemMonitorService = new();
+    private readonly ProjectService _projectService = new();
+    private readonly DataService _dataService = new();
     private string _currentBrowserUrl = "";
-    private System.Diagnostics.Process? _currentOpenCodeProcess;
-    private System.IO.StreamWriter? _openCodeInput;
-    private string _currentOpenCodeProject = "";
 
     private void StartProject_Click(object sender, RoutedEventArgs e)
     {
@@ -107,11 +107,6 @@ public partial class MainWindow : Window
                 System.Diagnostics.Process.Start(psi);
             }
             catch { }
-        }
-
-        if (!string.IsNullOrEmpty(proj.OpenCodeCommand))
-        {
-            StartOpenCodeForProject(proj);
         }
     }
 
@@ -141,99 +136,6 @@ public partial class MainWindow : Window
             return output.Contains(":" + port);
         }
         catch { return false; }
-    }
-
-    private void StartOpenCodeForProject(ProjectInfo proj)
-    {
-        try
-        {
-            if (_currentOpenCodeProcess != null && !_currentOpenCodeProcess.HasExited)
-            {
-                _currentOpenCodeProcess.Kill();
-                _currentOpenCodeProcess.Dispose();
-                _openCodeInput?.Dispose();
-            }
-
-            var psi = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "powershell.exe",
-                Arguments = "-NoExit -Command -",
-                UseShellExecute = false,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = false,
-                WorkingDirectory = proj.Path
-            };
-
-            _currentOpenCodeProcess = System.Diagnostics.Process.Start(psi);
-            if (_currentOpenCodeProcess != null)
-            {
-                _openCodeInput = _currentOpenCodeProcess.StandardInput;
-                _currentOpenCodeProject = proj.Name;
-                
-                _currentOpenCodeProcess.OutputDataReceived += (s, args) =>
-                {
-                    if (!string.IsNullOrEmpty(args.Data))
-                    {
-                        Dispatcher.Invoke(() => AppendOpenCodeOutput(args.Data + "\n"));
-                    }
-                };
-                _currentOpenCodeProcess.ErrorDataReceived += (s, args) =>
-                {
-                    if (!string.IsNullOrEmpty(args.Data))
-                    {
-                        Dispatcher.Invoke(() => AppendOpenCodeOutput("[ERROR] " + args.Data + "\n"));
-                    }
-                };
-                _currentOpenCodeProcess.BeginOutputReadLine();
-                _currentOpenCodeProcess.BeginErrorReadLine();
-
-                if (!string.IsNullOrEmpty(proj.OpenCodeCommand))
-                {
-                    _openCodeInput.WriteLine("cd '" + proj.Path + "'");
-                    _openCodeInput.WriteLine(proj.OpenCodeCommand);
-                    _openCodeInput.WriteLine("");
-                }
-
-                OpenCodeProjectName.Text = "Project: " + proj.Name;
-                OpenCodePanel.Visibility = Visibility.Visible;
-                AppendOpenCodeOutput("=== OpenCode terminal ready ===\nType commands below and press Enter to send.\n\n");
-            }
-        }
-        catch (Exception ex)
-        {
-            AppendOpenCodeOutput("Error: " + ex.Message + "\n");
-        }
-    }
-
-    private void StopOpenCodeForProject()
-    {
-        try
-        {
-            if (_currentOpenCodeProcess != null && !_currentOpenCodeProcess.HasExited)
-            {
-                _currentOpenCodeProcess.Kill();
-                _currentOpenCodeProcess.Dispose();
-                _currentOpenCodeProcess = null;
-            }
-            _openCodeInput?.Dispose();
-            _openCodeInput = null;
-            AppendOpenCodeOutput("\n=== Terminal stopped ===\n");
-            OpenCodePanel.Visibility = Visibility.Collapsed;
-        }
-        catch { }
-    }
-
-    private void StopOpenCode_Click(object sender, RoutedEventArgs e)
-    {
-        StopOpenCodeForProject();
-    }
-
-    private void AppendOpenCodeOutput(string text)
-    {
-        OpenCodeOutput.Text += text;
-        OpenCodeScroll.ScrollToEnd();
     }
 
     private void StopProject_Click(object sender, RoutedEventArgs e)
@@ -527,11 +429,6 @@ public partial class MainWindow : Window
         var cmdBox = new System.Windows.Controls.TextBox { Text = proj.Command, FontSize = 14, Padding = new Thickness(8, 5, 8, 5), Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 48)), Foreground = System.Windows.Media.Brushes.White, BorderThickness = new Thickness(0), Margin = new Thickness(0, 0, 0, 15) };
         panel.Children.Add(cmdBox);
 
-        var openCodeLabel = new TextBlock { Text = "OpenCode Command (optional):", Foreground = System.Windows.Media.Brushes.LightGray };
-        panel.Children.Add(openCodeLabel);
-        var openCodeBox = new System.Windows.Controls.TextBox { Text = proj.OpenCodeCommand ?? "", FontSize = 14, Padding = new Thickness(8, 5, 8, 5), Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(45, 45, 48)), Foreground = System.Windows.Media.Brushes.White, BorderThickness = new Thickness(0), Margin = new Thickness(0, 0, 0, 15) };
-        panel.Children.Add(openCodeBox);
-
         var btnPanel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
         var saveBtn = new System.Windows.Controls.Button { Content = "Save", Width = 80, Height = 32, Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(78, 201, 176)), Foreground = System.Windows.Media.Brushes.Black, FontWeight = FontWeights.Bold, BorderThickness = new Thickness(0) };
         var cancelBtn = new System.Windows.Controls.Button { Content = "Cancel", Width = 80, Height = 32, Background = System.Windows.Media.Brushes.Gray, Foreground = System.Windows.Media.Brushes.White, BorderThickness = new Thickness(0), Margin = new Thickness(10, 0, 0, 0) };
@@ -540,7 +437,6 @@ public partial class MainWindow : Window
         {
             proj.Port = portBox.Text;
             proj.Command = cmdBox.Text;
-            proj.OpenCodeCommand = openCodeBox.Text;
             SaveProjects();
             editWindow.Close();
         };
@@ -701,7 +597,6 @@ public partial class MainWindow : Window
                                 {
                                     if (parts.Length >= 2) existing.Port = parts[1].Trim();
                                     if (parts.Length >= 3) existing.Command = parts[2].Trim();
-                                    if (parts.Length >= 4) existing.OpenCodeCommand = parts[3].Trim();
                                 }
                                 else
                                 {
@@ -710,8 +605,7 @@ public partial class MainWindow : Window
                                         Name = name, 
                                         Path = projPath,
                                         Port = parts.Length >= 2 ? parts[1].Trim() : "",
-                                        Command = parts.Length >= 3 ? parts[2].Trim() : "",
-                                        OpenCodeCommand = parts.Length >= 4 ? parts[3].Trim() : ""
+                                        Command = parts.Length >= 3 ? parts[2].Trim() : ""
                                     });
                                 }
                             }
@@ -764,7 +658,7 @@ public partial class MainWindow : Window
             
             foreach (var proj in _projects)
             {
-                lines.Add(proj.Path + "|" + proj.Port + "|" + proj.Command + "|" + proj.OpenCodeCommand);
+                lines.Add(proj.Path + "|" + proj.Port + "|" + proj.Command);
             }
             
             File.WriteAllText(path, string.Join("\n", lines));
@@ -1603,11 +1497,6 @@ totalSizeText.Text = FormatBytes(totalSize);
         dialog.ShowDialog();
     }
 
-    private void SendOpenCode_Click(object sender, RoutedEventArgs e)
-    {
-        SendOpenCodeCommand();
-    }
-
     private void UrlBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key == System.Windows.Input.Key.Enter)
@@ -1774,40 +1663,6 @@ totalSizeText.Text = FormatBytes(totalSize);
         catch { }
     }
 
-    private void OpenCodeInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
-    {
-        if (e.Key == System.Windows.Input.Key.Enter)
-        {
-            SendOpenCodeCommand();
-        }
-    }
-
-    private void SendOpenCodeCommand()
-    {
-        var input = OpenCodeInput.Text.Trim();
-        if (string.IsNullOrEmpty(input)) return;
-
-        AppendOpenCodeOutput("> " + input + "\n");
-        OpenCodeInput.Text = "";
-
-        try
-        {
-            if (_openCodeInput != null && _currentOpenCodeProcess != null && !_currentOpenCodeProcess.HasExited)
-            {
-                _openCodeInput.WriteLine(input);
-                _openCodeInput.Flush();
-            }
-            else
-            {
-                AppendOpenCodeOutput("Terminal not running. Click Start on a project to open terminal.\n");
-            }
-        }
-        catch (Exception ex)
-        {
-            AppendOpenCodeOutput("Error sending command: " + ex.Message + "\n");
-        }
-    }
-
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
         if (WindowState == WindowState.Maximized)
@@ -1859,6 +1714,18 @@ totalSizeText.Text = FormatBytes(totalSize);
             _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             _diskReadCounter = new PerformanceCounter("PhysicalDisk", "Disk Read Bytes/sec", "_Total");
             _diskWriteCounter = new PerformanceCounter("PhysicalDisk", "Disk Write Bytes/sec", "_Total");
+            
+            var networkCategory = new PerformanceCounterCategory("Network Interface");
+            var instanceNames = networkCategory.GetInstanceNames();
+            if (instanceNames.Length > 0)
+            {
+                var activeInstance = instanceNames.FirstOrDefault(n => !n.Contains("Loopback")) ?? instanceNames[0];
+                _netSentCounter = new PerformanceCounter("Network Interface", "Bytes Sent/sec", activeInstance);
+                _netReceivedCounter = new PerformanceCounter("Network Interface", "Bytes Received/sec", activeInstance);
+                _netSentCounter.NextValue();
+                _netReceivedCounter.NextValue();
+            }
+
             _cpuCounter.NextValue();
             _diskReadCounter.NextValue();
             _diskWriteCounter.NextValue();
@@ -1868,6 +1735,8 @@ totalSizeText.Text = FormatBytes(totalSize);
         _updateTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
         _updateTimer.Tick += (s, args) => UpdateMetrics();
         _updateTimer.Start();
+
+        _systemMonitorService.Initialize();
     }
 
     private void UpdateMetrics()
@@ -1886,6 +1755,10 @@ totalSizeText.Text = FormatBytes(totalSize);
 
             var topProcesses = GetTopProcesses();
 
+            var netSent = (_netSentCounter?.NextValue() ?? 0) / 1024 / 1024;
+            var netReceived = (_netReceivedCounter?.NextValue() ?? 0) / 1024 / 1024;
+            var netTotal = netSent + netReceived;
+
             Dispatcher.Invoke(() =>
             {
                 CpuPercent.Text = $"{(int)cpuVal}%";
@@ -1897,6 +1770,7 @@ totalSizeText.Text = FormatBytes(totalSize);
                 DiskPercent.Text = $"C: {diskTotal:F1} MB/s";
                 DiskBar.Value = diskTotal;
                 DiskDetails.Text = $"R:{diskRead:F1} / W:{diskWrite:F1}";
+                NetDetails.Text = $"↑{netSent:F1} / ↓{netReceived:F1} MB/s";
                 TopProcesses.ItemsSource = topProcesses;
                 LastUpdate.Text = $"Updated: {DateTime.Now:HH:mm:ss}";
 
@@ -1909,7 +1783,7 @@ totalSizeText.Text = FormatBytes(totalSize);
                 if (MaxDiskPercent != null) MaxDiskPercent.Text = $"C: {diskTotal:F1} MB/s";
                 if (MaxDiskBar != null) MaxDiskBar.Value = diskTotal;
                 if (MaxDiskDetails != null) MaxDiskDetails.Text = $"R:{diskRead:F1} / W:{diskWrite:F1}";
-                if (MaxNetDetails != null) MaxNetDetails.Text = $"{(int)(diskTotal)} MB/s";
+                if (MaxNetDetails != null) MaxNetDetails.Text = $"↑{netSent:F1} / ↓{netReceived:F1} MB/s";
                 TopProcessesMax.ItemsSource = topProcesses;
             });
         }
@@ -1995,6 +1869,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         _netSentCounter?.Dispose();
         _netReceivedCounter?.Dispose();
         _trayIcon?.Dispose();
+        _systemMonitorService.Dispose();
     }
 
     private void NotifBtn_Click(object sender, RoutedEventArgs e)

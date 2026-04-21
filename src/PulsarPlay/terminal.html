@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: #1E1E1E;
+            overflow: hidden;
+            font-family: Cascadia Code, Consolas, monospace;
+        }
+        #terminal {
+            width: 100%;
+            height: 100%;
+            padding: 8px;
+            color: #4EC9B0;
+            font-size: 13px;
+            line-height: 1.4;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        #terminal::-webkit-scrollbar { width: 8px; }
+        #terminal::-webkit-scrollbar-track { background: #252526; }
+        #terminal::-webkit-scrollbar-thumb { background: #3F3F46; border-radius: 4px; }
+        .prompt { color: #DCDCAA; }
+        .command { color: #4EC9B0; }
+        .output { color: #CCCCCC; }
+        .error { color: #F14C4C; }
+        .info { color: #569CD6; }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+    <script>
+        const terminal = document.getElementById('terminal');
+        const lines = [];
+        let currentLine = '';
+        let cursor = 0;
+
+        function addLine(text, type = 'output') {
+            const span = document.createElement('span');
+            span.className = type;
+            span.textContent = text;
+            terminal.appendChild(span);
+            terminal.appendChild(document.createElement('br'));
+            scrollToBottom();
+        }
+
+        function updatePrompt() {
+            const promptEl = document.getElementById('prompt');
+            if (promptEl) {
+                promptEl.textContent = currentLine;
+                const selStart = Math.min(cursor, currentLine.length);
+                if (document.selection) {
+                    const range = promptEl.createTextRange();
+                    range.moveStart('character', selStart);
+                    range.collapse();
+                    range.select();
+                }
+            }
+        }
+
+        function scrollToBottom() {
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function handleInput(data) {
+            lines.push({ type: 'command', text: currentLine });
+            addLine('\n' + currentLine, 'command');
+
+            window.chrome.webview.postMessage(JSON.stringify({
+                type: 'command',
+                text: currentLine
+            }));
+
+            currentLine = '';
+            updatePrompt();
+        }
+
+        window.addEventListener('message', function(e) {
+            try {
+                const data = JSON.parse(e.data);
+                if (data.type === 'output') {
+                    addLine(data.text, 'output');
+                } else if (data.type === 'error') {
+                    addLine(data.text, 'error');
+                } else if (data.type === 'welcome') {
+                    addLine('Terminal ready. Type commands below.\n', 'info');
+                } else if (data.type === 'cleared') {
+                    terminal.innerHTML = '';
+                }
+            } catch (err) {
+                addLine(e.data, 'output');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleInput();
+            } else if (e.key === 'Backspace') {
+                if (currentLine.length > 0 && cursor > 0) {
+                    currentLine = currentLine.slice(0, cursor - 1) + currentLine.slice(cursor);
+                    cursor--;
+                    updatePrompt();
+                }
+                e.preventDefault();
+            } else if (e.key === 'Delete') {
+                if (cursor < currentLine.length) {
+                    currentLine = currentLine.slice(0, cursor) + currentLine.slice(cursor + 1);
+                    updatePrompt();
+                }
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                if (cursor > 0) cursor--;
+                updatePrompt();
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                if (cursor < currentLine.length) cursor++;
+                updatePrompt();
+                e.preventDefault();
+            } else if (e.key === 'ArrowUp') {
+                const prev = findPrevCommand();
+                if (prev) {
+                    currentLine = prev;
+                    cursor = currentLine.length;
+                    updatePrompt();
+                }
+                e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                const next = findNextCommand();
+                if (next !== null) {
+                    currentLine = next || '';
+                    cursor = currentLine.length;
+                    updatePrompt();
+                }
+                e.preventDefault();
+            } else if (e.key === 'c' && e.ctrlKey) {
+                window.chrome.webview.postMessage(JSON.stringify({
+                    type: 'signal',
+                    sig: 'SIGINT'
+                }));
+                e.preventDefault();
+            } else if (e.key === 'l' && e.ctrlKey) {
+                terminal.innerHTML = '';
+                window.chrome.webview.postMessage(JSON.stringify({
+                    type: 'command',
+                    text: 'clear'
+                }));
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keypress', function(e) {
+            if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                const before = currentLine.slice(0, cursor);
+                const after = currentLine.slice(cursor);
+                currentLine = before + e.key + after;
+                cursor++;
+                updatePrompt();
+            }
+        });
+
+        const commandHistory = [];
+        let historyIndex = -1;
+
+        function findPrevCommand() {
+            if (commandHistory.length === 0) return null;
+            if (historyIndex <= 0) {
+                historyIndex = 0;
+                return commandHistory[0];
+            }
+            historyIndex--;
+            return commandHistory[historyIndex];
+        }
+
+        function findNextCommand() {
+            if (commandHistory.length === 0) return null;
+            if (historyIndex >= commandHistory.length - 1) {
+                historyIndex = commandHistory.length;
+                return '';
+            }
+            historyIndex++;
+            return commandHistory[historyIndex];
+        }
+
+        function receiveCommand(cmd) {
+            commandHistory.push(cmd);
+            historyIndex = commandHistory.length;
+        }
+
+        window.receiveOutput = function(text) {
+            addLine(text, 'output');
+        };
+
+        window.receiveError = function(text) {
+            addLine(text, 'error');
+        };
+
+        window.clearTerminal = function() {
+            terminal.innerHTML = '';
+        };
+
+        window.setPrompt = function(dir) {
+            window.currentDir = dir;
+        };
+
+        terminal.addEventListener('click', function() {
+            terminal.focus();
+        });
+
+        terminal.tabIndex = 0;
+        terminal.focus();
+    </script>
+</body>
+</html>
