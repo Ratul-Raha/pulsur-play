@@ -97,7 +97,7 @@ public class VercelService
                 return;
             }
 
-            var args = $"logs --limit {limit}";
+            var args = $"logs --project {projectName ?? projectPath} --limit {limit}";
 
             var psi = new ProcessStartInfo
             {
@@ -140,7 +140,7 @@ public class VercelService
                 return;
             }
 
-            var args = $"logs --follow";
+            var args = $"logs --project {projectName ?? projectPath} --follow";
 
             var psi = new ProcessStartInfo
             {

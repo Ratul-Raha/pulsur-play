@@ -264,8 +264,8 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="200"/>
-                <RowDefinition Height="200"/>
+                <RowDefinition Height="250"/>
+                <RowDefinition Height="250"/>
                 <RowDefinition Height="28"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -444,6 +444,7 @@
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Vercel Logs" Foreground="#569CD6" FontFamily="Consolas" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
                             <Button x:Name="RefreshVercelLogsBtn" Content="&#xE72C;" Width="20" Height="20" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="RefreshVercelLogs_Click" Cursor="Hand" Margin="10,0,0,0" ToolTip="Refresh"/>
+                            <Button x:Name="LiveVercelLogsBtn" Content="Live" Width="35" Height="20" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontFamily="Consolas" FontSize="10" Click="LiveVercelLogs_Click" Cursor="Hand" Margin="5,0,0,0" ToolTip="Live Stream"/>
                         </StackPanel>
                     </Grid>
                     <ScrollViewer Grid.Row="1" x:Name="VercelLogsScroll" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0">

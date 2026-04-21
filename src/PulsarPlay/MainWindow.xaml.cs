@@ -2276,7 +2276,38 @@ totalSizeText.Text = FormatBytes(totalSize);
             return;
         }
 
+        _vercelService.Stop();
         FetchVercelLogs(_selectedVercelProject);
+    }
+
+    private void LiveVercelLogs_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedVercelProject == null)
+        {
+            VercelLogsOutput.Text = "Select a project first to view Vercel logs.";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_selectedVercelProject.VercelProjectName) && string.IsNullOrEmpty(_selectedVercelProject.VercelProjectId))
+        {
+            VercelLogsOutput.Text = "No Vercel project configured for this project.\nAdd vercel.json to your project folder.";
+            VercelStatus.Text = "No Config";
+            return;
+        }
+
+        _vercelService.Stop();
+
+        _vercelService.OutputReceived -= OnVercelOutput;
+        _vercelService.ErrorReceived -= OnVercelError;
+
+        VercelLogsOutput.Text = "";
+        VercelStatus.Text = "Live...";
+
+        _vercelService.OutputReceived += OnVercelOutput;
+        _vercelService.ErrorReceived += OnVercelError;
+
+        var projectName = !string.IsNullOrEmpty(_selectedVercelProject.VercelProjectName) ? _selectedVercelProject.VercelProjectName : _selectedVercelProject.Name;
+        _ = _vercelService.StreamLogsAsync(_selectedVercelProject.Path, _selectedVercelProject.VercelOrgId, projectName);
     }
 
     private void FetchVercelLogs(ProjectInfo proj)
