@@ -2,6 +2,7 @@ using System;
 using System.Drawing;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -9,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -16,6 +18,21 @@ using System.Windows.Forms;
 using PulsarPlay.Services;
 
 namespace PulsarPlay;
+
+public class BoolToBackgroundConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is bool isSelected && isSelected)
+            return new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#3E3E42"));
+        return new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#252526"));
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
 
 public class PortInfo
 {
@@ -40,6 +57,8 @@ public class ProjectInfo
     public string VercelProjectId { get; set; } = "";
     public string VercelOrgId { get; set; } = "";
     public string VercelProjectName { get; set; } = "";
+    public string Type { get; set; } = "frontend";
+    public bool IsSelected { get; set; }
     public List<ProjectInfo> Children { get; set; } = new();
 }
 
@@ -93,6 +112,16 @@ public partial class MainWindow : Window
     private string _currentBrowserUrl = "";
     private ProjectInfo? _selectedVercelProject;
 
+    private void LogAction(string message, string type = "info")
+    {
+        Dispatcher.Invoke(() =>
+        {
+            string prefix = type.ToUpper();
+            TimelineLogs.Text += $"[{DateTime.Now:HH:mm:ss}] [{prefix}] {message}\n";
+            TimelineScroll.ScrollToEnd();
+        });
+    }
+
     private void StartProject_Click(object sender, RoutedEventArgs e)
     {
         var btn = sender as System.Windows.Controls.Button;
@@ -112,8 +141,12 @@ public partial class MainWindow : Window
                     WorkingDirectory = proj.Path
                 };
                 System.Diagnostics.Process.Start(psi);
+                LogAction($"Project started: {proj.Name} on port {proj.Port}", "success");
             }
-            catch { }
+            catch
+            {
+                LogAction($"Failed to start project: {proj.Name}", "error");
+            }
         }
     }
 
@@ -159,8 +192,12 @@ public partial class MainWindow : Window
             try
             {
                 System.Diagnostics.Process.GetProcessById(pid).Kill();
+                LogAction($"Project stopped: {proj.Name} (port {proj.Port})", "warning");
             }
-            catch { }
+            catch
+            {
+                LogAction($"Failed to stop project: {proj.Name}", "error");
+            }
         }
     }
 
@@ -393,6 +430,13 @@ public partial class MainWindow : Window
         var path = panel?.Tag?.ToString();
         if (string.IsNullOrEmpty(path)) return;
 
+        foreach (var p in _projects)
+        {
+            p.IsSelected = p.Path == path;
+        }
+
+        RefreshProjectLists();
+
         var proj = _projects.FirstOrDefault(p => p.Path == path);
         if (proj == null) return;
 
@@ -402,6 +446,36 @@ public partial class MainWindow : Window
     private void SelectProjectForTerminal(ProjectInfo proj)
     {
         _selectedProjectPath = proj.Path;
+
+        if (proj.Type?.ToLower() == "backend")
+        {
+            MaxWebView.Visibility = Visibility.Collapsed;
+            WebViewToolbar.Visibility = Visibility.Collapsed;
+            BackendStatusPanel.Visibility = Visibility.Visible;
+            BackendProjectName.Text = $"Project: {proj.Name}";
+            BackendPort.Text = $"Port: {proj.Port}";
+        }
+        else
+        {
+            MaxWebView.Visibility = Visibility.Visible;
+            WebViewToolbar.Visibility = Visibility.Visible;
+            BackendStatusPanel.Visibility = Visibility.Collapsed;
+            
+            if (!string.IsNullOrEmpty(proj.Port))
+            {
+                var url = $"http://localhost:{proj.Port}";
+                MaxUrlBox.Text = url;
+                try
+                {
+                    if (MaxWebView != null)
+                    {
+                        _ = MaxWebView.EnsureCoreWebView2Async();
+                        MaxWebView.CoreWebView2?.Navigate(url);
+                    }
+                }
+                catch { }
+            }
+        }
 
         if (!_terminals.TryGetValue(proj.Path, out var terminal))
         {
@@ -492,6 +566,8 @@ public partial class MainWindow : Window
         var proj = FindProjectByPath(path);
         
         if (proj == null) return;
+
+        LogAction($"Editing project: {proj.Name}", "info");
 
         var editWindow = new Window
         {
@@ -1402,6 +1478,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         }
 
         var url = "http://localhost:" + proj.Port;
+        LogAction($"Opening project: {proj.Name} at {url}", "info");
 
         if (WindowState == WindowState.Maximized)
         {
@@ -1620,6 +1697,8 @@ totalSizeText.Text = FormatBytes(totalSize);
             url = "https://" + url;
         }
 
+        LogAction($"Opening URL: {url}", "info");
+
         try
         {
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
@@ -1630,6 +1709,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         }
         catch (Exception ex)
         {
+            LogAction($"Error opening URL: {ex.Message}", "error");
             System.Windows.MessageBox.Show("Error opening browser: " + ex.Message);
         }
     }
@@ -1675,8 +1755,12 @@ totalSizeText.Text = FormatBytes(totalSize);
             _currentBrowserUrl = url;
             if (TimelineStatus != null)
                 TimelineStatus.Text = " - " + url;
+            LogAction($"Navigating to: {url}", "success");
         }
-        catch { }
+        catch (Exception ex)
+        {
+            LogAction($"Navigation failed: {ex.Message}", "error");
+        }
     }
 
     private System.Windows.Threading.DispatcherTimer? _timelineTimer;
@@ -2037,14 +2121,24 @@ totalSizeText.Text = FormatBytes(totalSize);
     {
         var btn = sender as System.Windows.Controls.Button;
         var path = btn?.Tag?.ToString();
-        if (path != null) GitCliOutput.Text += RunGitCommand(path, "git pull") + "\n";
+        if (path != null)
+        {
+            LogAction("Git Pull started...", "info");
+            GitCliOutput.Text += RunGitCommand(path, "git pull") + "\n";
+            LogAction("Git Pull executed", "success");
+        }
     }
 
     private void GitPush_Click(object sender, RoutedEventArgs e)
     {
         var btn = sender as System.Windows.Controls.Button;
         var path = btn?.Tag?.ToString();
-        if (path != null) GitCliOutput.Text += RunGitCommand(path, "git push") + "\n";
+        if (path != null)
+        {
+            LogAction("Git Push started...", "info");
+            GitCliOutput.Text += RunGitCommand(path, "git push") + "\n";
+            LogAction("Git Push completed successfully", "success");
+        }
     }
 
     private void GitCommit_Click(object sender, RoutedEventArgs e)
@@ -2190,6 +2284,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         var path = btn?.Tag?.ToString();
         if (path == null) return;
         
+        LogAction($"Git Add executed for: {path}", "success");
         var output = RunGitCommand(path, "git add .");
         var cliPanel = FindGitCliPanelByButton(btn);
         if (cliPanel != null)
@@ -2207,13 +2302,19 @@ totalSizeText.Text = FormatBytes(totalSize);
         if (commitPanel == null || path == null) return;
         
         var input = commitPanel.FindName("CommitMessageInput") as System.Windows.Controls.TextBox;
-        if (input == null || string.IsNullOrWhiteSpace(input.Text)) return;
+        if (input == null || string.IsNullOrWhiteSpace(input.Text))
+        {
+            LogAction("Commit failed: empty message", "error");
+            return;
+        }
         
         var msg = input.Text;
         input.Text = "";
         commitPanel.Visibility = Visibility.Collapsed;
         
         var output = RunGitCommand(path, "git add . && git commit -m \"" + msg + "\"");
+        
+        LogAction($"Commit successful: {msg}", "success");
         
         var cliPanel = FindGitCliPanelByButton(btn);
         if (cliPanel != null)
