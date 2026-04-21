@@ -1981,15 +1981,16 @@ totalSizeText.Text = FormatBytes(totalSize);
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo("cmd", "/c cd /d \"" + path + "\" && " + command);
+            var psi = new System.Diagnostics.ProcessStartInfo("cmd", "/c " + command);
             psi.UseShellExecute = false;
             psi.RedirectStandardOutput = true;
             psi.RedirectStandardError = true;
             psi.CreateNoWindow = true;
+            psi.WorkingDirectory = path;
             var proc = System.Diagnostics.Process.Start(psi);
+            proc?.WaitForExit();
             var output = proc?.StandardOutput.ReadToEnd();
             var error = proc?.StandardError.ReadToEnd();
-            proc?.WaitForExit();
             return string.IsNullOrWhiteSpace(error) ? output : output + error;
         }
         catch { return "Error"; }
