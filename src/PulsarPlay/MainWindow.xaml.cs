@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -34,6 +36,7 @@ public class ProjectInfo
     public bool IsActive { get; set; }
     public string Pid { get; set; } = "";
     public bool IsParent { get; set; }
+    public string Branch { get; set; } = "";
     public List<ProjectInfo> Children { get; set; } = new();
 }
 
@@ -717,9 +720,37 @@ public partial class MainWindow : Window
                 }
                 
                 PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+
+                foreach (var proj in _projects)
+                {
+                    proj.Branch = GetGitBranch(proj.Path);
+                }
+
+                if (PortList != null)
+                    PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+                if (PortListMax != null)
+                    PortListMax.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
             }
         }
         catch { }
+    }
+
+    private string GetGitBranch(string projPath)
+    {
+        try
+        {
+            var gitHeadPath = Path.Combine(projPath, ".git", "HEAD");
+            if (File.Exists(gitHeadPath))
+            {
+                var headContent = File.ReadAllText(gitHeadPath).Trim();
+                if (headContent.StartsWith("ref: refs/heads/"))
+                    return headContent.Replace("ref: refs/heads/", "").Trim();
+                else if (headContent.StartsWith("ref: "))
+                    return headContent.Replace("ref: ", "").Trim();
+            }
+        }
+        catch { }
+        return "main";
     }
 
     private void SaveProjects()
@@ -1396,6 +1427,8 @@ totalSizeText.Text = FormatBytes(totalSize);
             MaxUrlBox.Text = url;
             await MaxWebView.EnsureCoreWebView2Async();
             MaxWebView.CoreWebView2.Navigate(url);
+            if (TimelineStatus != null)
+                TimelineStatus.Text = " - " + url;
         }
         catch (Exception ex)
         {
@@ -1612,6 +1645,25 @@ totalSizeText.Text = FormatBytes(totalSize);
         }
     }
 
+    private async void OpenInspect_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (MaxWebView != null && TimelineLogs != null)
+            {
+                await MaxWebView.EnsureCoreWebView2Async();
+                if (WindowState == WindowState.Maximized)
+                {
+                    TimelineLogs.Text = "DevTools is not available to embed. Use browser's F12 to open DevTools in a separate window.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show("Error opening Inspect: " + ex.Message);
+        }
+    }
+
     private async void NavigateToUrl()
     {
         var url = MaxUrlBox?.Text?.Trim() ?? "";
@@ -1628,8 +1680,96 @@ totalSizeText.Text = FormatBytes(totalSize);
             {
                 await MaxWebView.EnsureCoreWebView2Async();
                 MaxWebView.CoreWebView2.Navigate(url);
+                SetupBrowserLogging();
+                StartTimelineRefresh();
             }
             _currentBrowserUrl = url;
+            if (TimelineStatus != null)
+                TimelineStatus.Text = " - " + url;
+        }
+        catch { }
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _timelineTimer;
+
+    private void StartTimelineRefresh()
+    {
+        _timelineTimer?.Stop();
+        _timelineTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+        _timelineTimer.Tick += async (s, e) => await RefreshTimelineLogs();
+        _timelineTimer.Start();
+    }
+
+    private async Task RefreshTimelineLogs()
+    {
+        try
+        {
+            if (MaxWebView == null) return;
+            await MaxWebView.EnsureCoreWebView2Async();
+
+            var logs = await MaxWebView.CoreWebView2.ExecuteScriptAsync("JSON.stringify(window.__pulsarLogs || [])");
+            var net = await MaxWebView.CoreWebView2.ExecuteScriptAsync("JSON.stringify(window.__pulsarNet || [])");
+
+            Dispatcher.Invoke(() =>
+            {
+                if (TimelineLogs != null && !string.IsNullOrEmpty(logs) && logs != "[]")
+                {
+                    var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(logs);
+                    if (parsed != null)
+                        TimelineLogs.Text = string.Join("\n", parsed.Take(50));
+                }
+
+                if (NetworkLogs != null && !string.IsNullOrEmpty(net) && net != "[]")
+                {
+                    var parsed = System.Text.Json.JsonSerializer.Deserialize<string[]>(net);
+                    if (parsed != null)
+                        NetworkLogs.Text = string.Join("\n", parsed.Take(50));
+                }
+            });
+        }
+        catch { }
+    }
+
+    private async void SetupBrowserLogging()
+    {
+        try
+        {
+            if (MaxWebView == null) return;
+            await MaxWebView.EnsureCoreWebView2Async();
+
+            var script = @"
+                if (!window.__pulsarSetup) {
+                    window.__pulsarLogs = [];
+                    window.__pulsarNet = [];
+                    window.__pulsarSetup = true;
+                    ['log','warn','error','info'].forEach(function(m) {
+                        var orig = console[m];
+                        console[m] = function() {
+                            var msg = '[' + m.toUpperCase() + '] ' + Array.from(arguments).map(function(a) {
+                                try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); }
+                            }).join(' ');
+                            window.__pulsarLogs.push(msg);
+                            if (window.__pulsarLogs.length > 50) window.__pulsarLogs.shift();
+                            orig.apply(console, arguments);
+                        };
+                    });
+                    var ox = XMLHttpRequest.prototype.open;
+                    XMLHttpRequest.prototype.open = function(method, url) {
+                        window.__pulsarNet.push(method + ' ' + url + ' [pending]');
+                        return ox.apply(this, arguments);
+                    };
+                    var os = XMLHttpRequest.prototype.send;
+                    XMLHttpRequest.prototype.send = function() {
+                        var t = this;
+                        t.addEventListener('load', function() { window.__pulsarNet.push(t.method + ' ' + t.responseURL + ' ' + t.status); });
+                        t.addEventListener('error', function() { window.__pulsarNet.push(t.method + ' ERROR'); });
+                        return os.apply(t, arguments);
+                    };
+                }
+                'ok';
+            ";
+
+            await MaxWebView.CoreWebView2.ExecuteScriptAsync(script);
         }
         catch { }
     }

@@ -211,6 +211,7 @@
                                                         <StackPanel Grid.Column="0" Orientation="Horizontal">
                                                             <TextBlock Text="📁 " Foreground="#4EC9B0"/>
                                                             <TextBlock Text="{Binding Name}" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="14" FontWeight="Bold"/>
+                                                            <TextBlock Text="{Binding Branch, StringFormat=' ({0})', TargetNullValue='(main)'}" Foreground="#858585" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" Margin="5,0,0,0"/>
                                                         </StackPanel>
                                                         <Button Grid.Column="1" Content="&#xE70F;" Width="28" Height="22" Background="#3F3F46" Foreground="#FFA500" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="EditProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="2,0" ToolTip="Edit"/>
                                                         <Button Grid.Column="2" Content="&#xE768;" Width="28" Height="22" Background="#4EC9B0" Foreground="#1E1E1E" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="StartProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="2,0" ToolTip="Play"/>
@@ -322,7 +323,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="180"/>
+                <RowDefinition Height="250"/>
                 <RowDefinition Height="28"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -367,6 +368,7 @@
                                                         <StackPanel Grid.Column="0" Orientation="Horizontal">
                                                             <TextBlock Text="📁 " Foreground="#4EC9B0"/>
                                                             <TextBlock Text="{Binding Name}" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="14" FontWeight="Bold"/>
+                                                            <TextBlock Text="{Binding Branch, StringFormat=' ({0})', TargetNullValue='(main)'}" Foreground="#858585" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" Margin="5,0,0,0"/>
                                                         </StackPanel>
                                                         <Button Grid.Column="1" Content="&#xE70F;" Width="28" Height="22" Background="#3F3F46" Foreground="#FFA500" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="EditProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="2,0" ToolTip="Edit"/>
                                                         <Button Grid.Column="2" Content="&#xE768;" Width="28" Height="22" Background="#4EC9B0" Foreground="#1E1E1E" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="14" Click="StartProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="2,0" ToolTip="Play"/>
@@ -434,10 +436,12 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="MaxUrlBox" Grid.Column="0" Background="#1E1E1E" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" Padding="10,8" BorderThickness="0" KeyDown="UrlBox_KeyDown"/>
                         <Button Grid.Column="1" Content="Go" Width="50" Height="30" Background="#4EC9B0" Foreground="#1E1E1E" BorderThickness="0" Click="GoBtn_Click" Margin="0,5,5,5"/>
-                        <Button Grid.Column="2" Content="Ext" Width="40" Height="30" Background="#569CD6" Foreground="White" BorderThickness="0" Click="OpenExternalBrowser_Click" Margin="0,5,10,5" ToolTip="Open in external browser"/>
+                        <Button Grid.Column="2" Content="Inspect" Width="60" Height="30" Background="#CE9178" Foreground="White" BorderThickness="0" Click="OpenInspect_Click" Margin="0,5,5,5" ToolTip="Open Developer Tools"/>
+                        <Button Grid.Column="3" Content="Ext" Width="40" Height="30" Background="#569CD6" Foreground="White" BorderThickness="0" Click="OpenExternalBrowser_Click" Margin="0,5,10,5" ToolTip="Open in external browser"/>
                     </Grid>
                     <wv2:WebView2 x:Name="MaxWebView" Grid.Row="1" Margin="0,10,0,0"/>
                 </Grid>
@@ -509,10 +513,40 @@
                     <Grid Grid.Row="0">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Timeline" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TimelineStatus" Text=" - Ready" Foreground="#858585" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center" Margin="10,0,0,0"/>
                         </StackPanel>
                     </Grid>
-                    <Grid Grid.Row="1" Background="#1E1E1E" Margin="0,5,0,0">
-                        <TextBlock Text="Tracks / Logs Area" Foreground="#858585" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Consolas" FontSize="11"/>
+                    <Grid Grid.Row="1" Margin="0,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#1E1E1E">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="25"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Console" Foreground="#DCDCAA" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
+                                <ScrollViewer Grid.Row="1" x:Name="TimelineScroll" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="TimelineLogs" Text="Console output will appear here" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="5"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                        <GridSplitter Grid.Column="1" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
+                        <Border Grid.Column="2" Background="#1E1E1E">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="25"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Text="Network" Foreground="#569CD6" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
+                                <ScrollViewer Grid.Row="1" x:Name="NetworkScroll" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="NetworkLogs" Text="Network requests will appear here" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="5"/>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </Grid>
             </Border>
