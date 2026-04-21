@@ -84,6 +84,8 @@ public partial class MainWindow : Window
     private readonly SystemMonitorService _systemMonitorService = new();
     private readonly ProjectService _projectService = new();
     private readonly DataService _dataService = new();
+    private readonly Dictionary<string, TerminalService> _terminals = new();
+    private string _selectedProjectPath = "";
     private string _currentBrowserUrl = "";
 
     private void StartProject_Click(object sender, RoutedEventArgs e)
@@ -365,6 +367,67 @@ public partial class MainWindow : Window
             _projects.Add(newProject);
             SaveProjects();
             PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+        }
+    }
+
+    private void ProjectSelect_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        var panel = sender as StackPanel;
+        var path = panel?.Tag?.ToString();
+        if (string.IsNullOrEmpty(path)) return;
+
+        var proj = _projects.FirstOrDefault(p => p.Path == path);
+        if (proj == null) return;
+
+        SelectProjectForTerminal(proj);
+    }
+
+    private void SelectProjectForTerminal(ProjectInfo proj)
+    {
+        _selectedProjectPath = proj.Path;
+
+        if (!_terminals.TryGetValue(proj.Path, out var terminal))
+        {
+            terminal = new TerminalService();
+            terminal.OutputReceived += output => Dispatcher.Invoke(() => AppendTerminalOutput(output, proj.Path));
+            terminal.ErrorReceived += error => Dispatcher.Invoke(() => AppendTerminalOutput(error, proj.Path));
+            _terminals[proj.Path] = terminal;
+        }
+
+        _ = terminal.StartAsync("powershell.exe", proj.Path);
+        TerminalHeader.Text = $"Terminal - {proj.Name}";
+        TerminalOutput.Text = $"Terminal ready for {proj.Name}\nWorking directory: {proj.Path}\n";
+    }
+
+    private void AppendTerminalOutput(string text, string projectPath)
+    {
+        if (_selectedProjectPath != projectPath) return;
+        TerminalOutput.Text += text;
+        TerminalScroll.ScrollToEnd();
+    }
+
+    private void TerminalInput_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == System.Windows.Input.Key.Enter && !string.IsNullOrEmpty(_selectedProjectPath))
+        {
+            var input = TerminalInput.Text;
+            TerminalInput.Text = "";
+            if (_terminals.TryGetValue(_selectedProjectPath, out var terminal))
+            {
+                terminal.SendCommand(input);
+            }
+        }
+    }
+
+    private void TerminalRun_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrEmpty(_selectedProjectPath)) return;
+
+        var input = TerminalInput.Text;
+        TerminalInput.Text = "";
+        if (_terminals.TryGetValue(_selectedProjectPath, out var terminal))
+        {
+            terminal.SendCommand(input);
         }
     }
 

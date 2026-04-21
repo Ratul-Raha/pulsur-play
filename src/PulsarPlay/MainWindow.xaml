@@ -186,7 +186,7 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
-                                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                                    <StackPanel Grid.Column="0" Orientation="Horizontal" MouseLeftButtonUp="ProjectSelect_Click" Tag="{Binding Path}" Cursor="Hand" Background="Transparent">
                                                         <TextBlock Text="📁 " Foreground="#4EC9B0" FontSize="12"/>
                                                         <TextBlock Text="{Binding Name}" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" FontWeight="Bold"/>
                                                         <TextBlock Text="{Binding Branch, StringFormat=' ({0})', TargetNullValue='(main)'}" Foreground="#858585" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="3,0,0,0"/>
@@ -330,7 +330,7 @@
                                                 <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                            <StackPanel Grid.Column="0" Orientation="Horizontal" MouseLeftButtonUp="ProjectSelect_Click" Tag="{Binding Path}" Cursor="Hand" Background="Transparent">
                                                 <TextBlock Text="📁 " Foreground="#4EC9B0" FontSize="12"/>
                                                 <TextBlock Text="{Binding Name}" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" FontWeight="Bold"/>
                                                 <TextBlock Text="{Binding Branch, StringFormat=' ({0})', TargetNullValue='(main)'}" Foreground="#858585" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="3,0,0,0"/>
@@ -472,6 +472,8 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="5"/>
                             <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="5"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <Border Grid.Column="0" Background="#1E1E1E">
                             <Grid>
@@ -487,6 +489,24 @@
                         </Border>
                         <GridSplitter Grid.Column="1" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
                         <Border Grid.Column="2" Background="#1E1E1E">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="25"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" x:Name="TerminalHeader" Text="Terminal - Select a project" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
+                                <ScrollViewer Grid.Row="1" x:Name="TerminalScroll" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="TerminalOutput" Text="Click a project to open terminal" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="5"/>
+                                </ScrollViewer>
+                                <Grid Grid.Row="2">
+                                    <TextBox x:Name="TerminalInput" Background="#252526" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="10" Padding="5,4" BorderThickness="1" BorderBrush="#3F3F46" KeyDown="TerminalInput_KeyDown"/>
+                                    <Button Content="Run" Width="40" Height="24" Background="#4EC9B0" Foreground="#1E1E1E" BorderThickness="0" Click="TerminalRun_Click" HorizontalAlignment="Right" Margin="0,2,2,2"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <GridSplitter Grid.Column="3" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
+                        <Border Grid.Column="4" Background="#1E1E1E">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="25"/>
