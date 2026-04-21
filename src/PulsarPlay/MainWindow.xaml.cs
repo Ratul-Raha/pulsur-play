@@ -37,6 +37,9 @@ public class ProjectInfo
     public string Pid { get; set; } = "";
     public bool IsParent { get; set; }
     public string Branch { get; set; } = "";
+    public string VercelProjectId { get; set; } = "";
+    public string VercelOrgId { get; set; } = "";
+    public string VercelProjectName { get; set; } = "";
     public List<ProjectInfo> Children { get; set; } = new();
 }
 
@@ -84,9 +87,11 @@ public partial class MainWindow : Window
     private readonly SystemMonitorService _systemMonitorService = new();
     private readonly ProjectService _projectService = new();
     private readonly DataService _dataService = new();
+    private readonly VercelService _vercelService = new();
     private readonly Dictionary<string, TerminalService> _terminals = new();
     private string _selectedProjectPath = "";
     private string _currentBrowserUrl = "";
+    private ProjectInfo? _selectedVercelProject;
 
     private void StartProject_Click(object sender, RoutedEventArgs e)
     {
@@ -339,7 +344,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AddPort_Click(object sender, RoutedEventArgs e)
+    private async void AddPort_Click(object sender, RoutedEventArgs e)
     {
         var selectFolder = new System.Windows.Forms.FolderBrowserDialog();
         selectFolder.Description = "Select Project Folder";
@@ -363,10 +368,22 @@ public partial class MainWindow : Window
                 Port = "",
                 Command = ""
             };
-            
+
+            try
+            {
+                var vercelConfig = await _vercelService.ReadVercelConfig(selectedPath);
+                if (!string.IsNullOrEmpty(vercelConfig.ProjectId) || !string.IsNullOrEmpty(vercelConfig.ProjectName))
+                {
+                    newProject.VercelProjectId = vercelConfig.ProjectId ?? "";
+                    newProject.VercelOrgId = vercelConfig.OrgId ?? "";
+                    newProject.VercelProjectName = vercelConfig.ProjectName ?? name;
+                }
+            }
+            catch { }
+
             _projects.Add(newProject);
             SaveProjects();
-            PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+            RefreshProjectLists();
         }
     }
 
@@ -397,6 +414,18 @@ public partial class MainWindow : Window
         _ = terminal.StartAsync("powershell.exe", proj.Path);
         TerminalHeader.Text = $"Terminal - {proj.Name}";
         TerminalOutput.Text = $"Terminal ready for {proj.Name}\nWorking directory: {proj.Path}\n";
+
+        if (!string.IsNullOrEmpty(proj.VercelProjectName) || !string.IsNullOrEmpty(proj.VercelProjectId))
+        {
+            _selectedVercelProject = proj;
+            FetchVercelLogs(proj);
+        }
+        else
+        {
+            _selectedVercelProject = null;
+            VercelLogsOutput.Text = "No Vercel project configured.\nAdd vercel.json to your project folder to see deployment logs.";
+            VercelStatus.Text = "--";
+        }
     }
 
     private void AppendTerminalOutput(string text, string projectPath)
@@ -544,7 +573,7 @@ public partial class MainWindow : Window
         {
             _projects.Remove(proj);
             SaveProjects();
-            PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+            RefreshProjectLists();
             confirmWindow.Close();
         };
         cancelBtn.Click += (s, args) => confirmWindow.Close();
@@ -592,7 +621,7 @@ public partial class MainWindow : Window
         confirmWindow.ShowDialog();
     }
 
-    private void ScanSubfolders(string folder)
+    private async void ScanSubfolders(string folder)
     {
         if (!Directory.Exists(folder)) return;
         
@@ -605,11 +634,11 @@ public partial class MainWindow : Window
             }
         }
         
-        LoadProjectSettings();
-        PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+        await LoadProjectSettingsAsync();
+        RefreshProjectLists();
     }
 
-    private void ScanProjects()
+    private async void ScanProjects()
     {
         _projects.Clear();
         if (Directory.Exists(_rootFolder))
@@ -628,10 +657,10 @@ public partial class MainWindow : Window
                 }
             }
         }
-        LoadProjectSettings();
+        await LoadProjectSettingsAsync();
     }
 
-    private void LoadProjectSettings()
+    private async Task LoadProjectSettingsAsync()
     {
         try
         {
@@ -675,18 +704,26 @@ public partial class MainWindow : Window
                         }
                     }
                 }
-                
-                PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+
+                RefreshProjectLists();
 
                 foreach (var proj in _projects)
                 {
                     proj.Branch = GetGitBranch(proj.Path);
+
+                    if (string.IsNullOrEmpty(proj.VercelProjectId) && string.IsNullOrEmpty(proj.VercelProjectName))
+                    {
+                        var vercelConfig = await _vercelService.ReadVercelConfig(proj.Path);
+                        if (!string.IsNullOrEmpty(vercelConfig.ProjectId) || !string.IsNullOrEmpty(vercelConfig.ProjectName))
+                        {
+                            proj.VercelProjectId = vercelConfig.ProjectId ?? "";
+                            proj.VercelOrgId = vercelConfig.OrgId ?? "";
+                            proj.VercelProjectName = vercelConfig.ProjectName ?? proj.Name;
+                        }
+                    }
                 }
 
-                if (PortList != null)
-                    PortList.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
-                if (PortListMax != null)
-                    PortListMax.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
+                RefreshProjectLists();
             }
         }
         catch { }
@@ -1726,7 +1763,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         catch { }
     }
 
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
         if (WindowState == WindowState.Maximized)
         {
@@ -1738,7 +1775,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         }
 
         PositionWindow();
-        LoadProjectSettings();
+        await LoadProjectSettingsAsync();
         if (PortListMax != null)
             PortListMax.ItemsSource = _projects.OrderBy(p => p.Name).ToList();
         RefreshPorts();
@@ -1958,7 +1995,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         notifWindow.ShowDialog();
     }
 
-    private void Tab_Changed(object sender, RoutedEventArgs e)
+    private async void Tab_Changed(object sender, RoutedEventArgs e)
     {
         if (SystemContent == null || DevContent == null) return;
 
@@ -1971,7 +2008,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         {
             SystemContent.Visibility = Visibility.Collapsed;
             DevContent.Visibility = Visibility.Visible;
-            LoadProjectSettings();
+            await LoadProjectSettingsAsync();
             RefreshPorts();
             LoadCommands();
         }
@@ -2209,7 +2246,7 @@ totalSizeText.Text = FormatBytes(totalSize);
         {
             var parent = System.Windows.Media.VisualTreeHelper.GetParent(current);
             if (parent == null) break;
-            
+
             if (parent is System.Windows.Controls.StackPanel sp)
             {
                 for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(sp); i++)
@@ -2222,5 +2259,65 @@ totalSizeText.Text = FormatBytes(totalSize);
             current = parent;
         }
         return null;
+    }
+
+    private void RefreshVercelLogs_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedVercelProject == null)
+        {
+            VercelLogsOutput.Text = "Select a project first to view Vercel logs.";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(_selectedVercelProject.VercelProjectName) && string.IsNullOrEmpty(_selectedVercelProject.VercelProjectId))
+        {
+            VercelLogsOutput.Text = "No Vercel project configured for this project.\nAdd vercel.json to your project folder.";
+            VercelStatus.Text = "No Config";
+            return;
+        }
+
+        FetchVercelLogs(_selectedVercelProject);
+    }
+
+    private void FetchVercelLogs(ProjectInfo proj)
+    {
+        _vercelService.OutputReceived -= OnVercelOutput;
+        _vercelService.ErrorReceived -= OnVercelError;
+
+        VercelLogsOutput.Text = "";
+        VercelStatus.Text = "Loading...";
+
+        _vercelService.OutputReceived += OnVercelOutput;
+        _vercelService.ErrorReceived += OnVercelError;
+
+        var projectName = !string.IsNullOrEmpty(proj.VercelProjectName) ? proj.VercelProjectName : proj.Name;
+        _ = _vercelService.FetchLogsAsync(proj.Path, proj.VercelOrgId, projectName, 50);
+    }
+
+    private void OnVercelOutput(string output)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            VercelLogsOutput.Text += output;
+            VercelLogsScroll.ScrollToEnd();
+            VercelStatus.Text = "Connected";
+        });
+    }
+
+    private void OnVercelError(string error)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            VercelLogsOutput.Text += "[ERROR] " + error + "\n";
+            VercelLogsScroll.ScrollToEnd();
+            VercelStatus.Text = "Error";
+        });
+    }
+
+    private void RefreshProjectLists()
+    {
+        var sortedProjects = _projects.OrderBy(p => p.Name).ToList();
+        PortList.ItemsSource = sortedProjects;
+        PortListMax.ItemsSource = sortedProjects;
     }
 }

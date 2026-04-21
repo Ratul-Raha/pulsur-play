@@ -21,6 +21,10 @@ public class ProjectInfo
     public bool IsActive { get; set; }
     public string Pid { get; set; } = "";
     public bool IsParent { get; set; }
+    public string Branch { get; set; } = "";
+    public string VercelProjectId { get; set; } = "";
+    public string VercelOrgId { get; set; } = "";
+    public string VercelProjectName { get; set; } = "";
     public List<ProjectInfo> Children { get; set; } = new();
 }
 

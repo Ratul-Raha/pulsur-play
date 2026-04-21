@@ -143,30 +143,7 @@
                         </Border>
                     </StackPanel>
                     <StackPanel x:Name="DevContent" Visibility="Collapsed">
-                        <Border Background="#252526" CornerRadius="0" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <Grid Margin="0,0,0,10">
-                                    <TextBlock Text="📝 Commands" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/>
-                                    <Button Content="+" Width="24" Height="24" Background="#3F3F46" Foreground="#4EC9B0" BorderThickness="0" Click="AddCommand_Click" HorizontalAlignment="Right" Cursor="Hand"/>
-                                </Grid>
-                                <ItemsControl x:Name="CommandList">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="0,2">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Name}" Foreground="#DCDCAA" FontFamily="Consolas" FontSize="11" VerticalAlignment="Center"/>
-                                                <Button Grid.Column="1" Content="Run" Width="32" Height="18" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontSize="10" Click="RunCommand_Click" Tag="{Binding Command}" Cursor="Hand" Margin="2,0"/>
-                                                <Button Grid.Column="2" Content="✖" Width="18" Height="18" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontSize="10" Click="DeleteCommand_Click" Tag="{Binding Name}" Cursor="Hand" Margin="2,0"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Border>
+                        <ItemsControl x:Name="CommandList" Visibility="Collapsed"/>
                         <Border Background="#252526" CornerRadius="0" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <Grid Margin="0,0,0,10">
@@ -229,6 +206,23 @@
                             </StackPanel>
                         </Border>
                         <Border Background="#252526" CornerRadius="0" Padding="12" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="💻 Git CLI" Style="{StaticResource MetricLabel}" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="100" Margin="0,0,0,10">
+                                    <TextBox x:Name="GitCliOutput" Background="#1E1E1E" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="11" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0"/>
+                                </ScrollViewer>
+                                <Grid Grid.Row="2">
+                                    <TextBox x:Name="GitCliInput" Background="#1E1E1E" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" Padding="8,6" BorderThickness="1" BorderBrush="#3F3F46" KeyDown="GitCliInput_KeyDown"/>
+                                    <Button Content="Run" Width="50" Height="28" Background="#4EC9B0" Foreground="#1E1E1E" BorderThickness="0" Click="GitCliSend_Click" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                        <Border Background="#252526" CornerRadius="0" Padding="12" Margin="0,0,0,10">
                             <StackPanel>
                                 <Grid Margin="0,0,0,10">
                                     <TextBlock Text="🔌 Active Ports" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/>
@@ -250,23 +244,6 @@
                                 </ItemsControl>
                             </StackPanel>
                         </Border>
-                        <Border Background="#252526" CornerRadius="0" Padding="12" Margin="0,0,0,10">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                <TextBlock Text="💻 Git CLI" Style="{StaticResource MetricLabel}" FontWeight="SemiBold" Margin="0,0,0,10"/>
-                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="100" Margin="0,0,0,10">
-                                    <TextBox x:Name="GitCliOutput" Background="#1E1E1E" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="11" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0"/>
-                                </ScrollViewer>
-                                <Grid Grid.Row="2">
-                                    <TextBox x:Name="GitCliInput" Background="#1E1E1E" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" Padding="8,6" BorderThickness="1" BorderBrush="#3F3F46" KeyDown="GitCliInput_KeyDown"/>
-                                    <Button Content="Run" Width="50" Height="28" Background="#4EC9B0" Foreground="#1E1E1E" BorderThickness="0" Click="GitCliSend_Click" HorizontalAlignment="Right"/>
-                                </Grid>
-                            </Grid>
-                        </Border>
                     </StackPanel>
                 </StackPanel>
             </ScrollViewer>
@@ -287,7 +264,8 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="250"/>
+                <RowDefinition Height="200"/>
+                <RowDefinition Height="200"/>
                 <RowDefinition Height="28"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -455,7 +433,35 @@
                 </ScrollViewer>
             </Border>
 
-            <Border Grid.Row="2" Grid.ColumnSpan="5" Background="#252526" Margin="10,0,10,10" CornerRadius="0" Padding="10">
+            <Border Grid.Row="2" Grid.Column="4" Background="#252526" Margin="0,10,10,10" CornerRadius="0" Padding="10">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Vercel Logs" Foreground="#569CD6" FontFamily="Consolas" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <Button x:Name="RefreshVercelLogsBtn" Content="&#xE72C;" Width="20" Height="20" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="RefreshVercelLogs_Click" Cursor="Hand" Margin="10,0,0,0" ToolTip="Refresh"/>
+                        </StackPanel>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" x:Name="VercelLogsScroll" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0">
+                        <TextBox x:Name="VercelLogsOutput" Text="Select a project with Vercel config to view logs" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" IsReadOnly="True" Background="#1E1E1E" BorderThickness="0"/>
+                    </ScrollViewer>
+                    <Grid Grid.Row="2" Margin="0,5,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Status:" Foreground="#858585" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                        <TextBlock x:Name="VercelStatus" Grid.Column="1" Text="--" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center"/>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="3" Grid.ColumnSpan="5" Background="#252526" Margin="10,0,10,10" CornerRadius="0" Padding="10">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30"/>
@@ -522,7 +528,7 @@
                 </Grid>
             </Border>
 
-            <Border Grid.Row="3" Grid.ColumnSpan="5" Background="#2D2D30">
+            <Border Grid.Row="4" Grid.ColumnSpan="5" Background="#2D2D30">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
