@@ -1377,7 +1377,30 @@ totalSizeText.Text = FormatBytes(totalSize);
         }
 
         var url = "http://localhost:" + proj.Port;
-        OpenBrowserWindow(url);
+
+        if (WindowState == WindowState.Maximized)
+        {
+            OpenInMaxWebView(url);
+        }
+        else
+        {
+            OpenBrowserWindow(url);
+        }
+    }
+
+    private async void OpenInMaxWebView(string url)
+    {
+        try
+        {
+            if (MaxWebView == null) return;
+            MaxUrlBox.Text = url;
+            await MaxWebView.EnsureCoreWebView2Async();
+            MaxWebView.CoreWebView2.Navigate(url);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show("Error: " + ex.Message);
+        }
     }
 
     private async void OpenBrowserWindow(string url)
@@ -1565,6 +1588,30 @@ totalSizeText.Text = FormatBytes(totalSize);
         NavigateToUrl();
     }
 
+    private void OpenExternalBrowser_Click(object sender, RoutedEventArgs e)
+    {
+        var url = MaxUrlBox?.Text?.Trim() ?? "";
+        if (string.IsNullOrEmpty(url)) return;
+
+        if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+        {
+            url = "https://" + url;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show("Error opening browser: " + ex.Message);
+        }
+    }
+
     private async void NavigateToUrl()
     {
         var url = MaxUrlBox?.Text?.Trim() ?? "";
@@ -1723,6 +1770,7 @@ totalSizeText.Text = FormatBytes(totalSize);
                 if (MaxDiskBar != null) MaxDiskBar.Value = diskTotal;
                 if (MaxDiskDetails != null) MaxDiskDetails.Text = $"R:{diskRead:F1} / W:{diskWrite:F1}";
                 if (MaxNetDetails != null) MaxNetDetails.Text = $"{(int)(diskTotal)} MB/s";
+                TopProcessesMax.ItemsSource = topProcesses;
             });
         }
         catch { }
