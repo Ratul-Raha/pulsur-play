@@ -264,8 +264,8 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="40"/>
                 <RowDefinition Height="*"/>
-                <RowDefinition Height="250"/>
-                <RowDefinition Height="250"/>
+                <RowDefinition Height="5"/>
+                <RowDefinition Height="220" MinHeight="120"/>
                 <RowDefinition Height="28"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
@@ -276,7 +276,8 @@
                 <ColumnDefinition Width="320"/>
             </Grid.ColumnDefinitions>
 
-            <Grid Grid.ColumnSpan="5" Background="#252526">
+            <!-- Title Bar -->
+            <Grid Grid.Row="0" Grid.ColumnSpan="5" Background="#252526">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
                     <TextBlock Text="Pulsar Play" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="14" FontWeight="Bold"/>
                 </StackPanel>
@@ -286,8 +287,9 @@
                 </StackPanel>
             </Grid>
 
-            <GridSplitter Grid.Column="1" Grid.RowSpan="4" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
+            <GridSplitter Grid.Column="1" Grid.Row="1" Grid.RowSpan="4" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
 
+            <!-- Column 0: Projects -->
             <Border Grid.Row="1" Grid.Column="0" Background="#252526" Margin="10,10,0,10" CornerRadius="0" Padding="10">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
@@ -295,65 +297,66 @@
                             <TextBlock Text="Projects" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="14" FontWeight="Bold"/>
                             <Button Content="+" Width="24" Height="24" Background="#3F3F46" Foreground="#4EC9B0" BorderThickness="0" Click="AddPort_Click" HorizontalAlignment="Right" Cursor="Hand"/>
                         </Grid>
-                        <ItemsControl x:Name="PortListMax">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Margin="0,0,0,6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" Orientation="Horizontal" MouseLeftButtonUp="ProjectSelect_Click" Tag="{Binding Path}" Cursor="Hand" Background="Transparent">
-                                                <TextBlock Text="📁 " Foreground="#4EC9B0" FontSize="12"/>
-                                                <TextBlock Text="{Binding Name}" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" FontWeight="Bold"/>
-                                                <TextBlock Text="{Binding Branch, StringFormat=' ({0})', TargetNullValue='(main)'}" Foreground="#858585" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="3,0,0,0"/>
-                                            </StackPanel>
-                                            <Button Grid.Column="1" Content="&#xE70F;" Width="20" Height="18" Background="Transparent" Foreground="#FFA500" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="EditProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Edit"/>
-                                            <Button Grid.Column="2" Content="&#xE768;" Width="20" Height="18" Background="Transparent" Foreground="#4EC9B0" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="StartProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Play"/>
-                                            <Button Grid.Column="3" Content="&#xE71A;" Width="20" Height="18" Background="Transparent" Foreground="#CE9178" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="StopProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Stop"/>
-                                            <Button Grid.Column="4" Content="&#xE774;" Width="20" Height="18" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="ViewProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Open URL"/>
-                                            <Button Grid.Column="5" Content="&#xE74D;" Width="20" Height="18" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="RemoveProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Delete"/>
-                                        </Grid>
-                                        <Grid Margin="0,2,0,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Button Grid.Column="0" Content="&#xE8B1;" Width="20" Height="18" Background="Transparent" Foreground="#4EC9B0" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitAdd_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Add"/>
-                                            <Button Grid.Column="1" Content="&#xE8C8;" Width="20" Height="18" Background="Transparent" Foreground="#DCDCAA" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitCommit_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Commit"/>
-                                            <Button Grid.Column="2" Content="&#xE898;" Width="20" Height="18" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitPush_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Push"/>
-                                            <Button Grid.Column="3" Content="&#xE895;" Width="20" Height="18" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitPull_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Pull"/>
-                                            <Button Grid.Column="4" Content="&#xE756;" Width="20" Height="18" Background="Transparent" Foreground="#DCDCAA" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitProjectCli_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Open Git CLI"/>
-                                        </Grid>
-                                        <Border x:Name="CommitPanel" Background="#1E1E1E" CornerRadius="2" Padding="4" Margin="0,4,0,0" Visibility="Collapsed">
+                            <ItemsControl x:Name="PortListMax">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,6">
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-                                                <TextBox x:Name="CommitMessageInput" Grid.Column="0" Background="#252526" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="10" Padding="4,2" BorderThickness="1" BorderBrush="#3F3F46"/>
-                                                <Button Grid.Column="1" Content="Commit" Width="40" Height="20" Background="#DCDCAA" Foreground="#1E1E1E" BorderThickness="0" FontSize="10" Click="GitCommitRun_Click" Tag="{Binding Path}" HorizontalAlignment="Right" Margin="4,0,0,0"/>
+                                                <StackPanel Grid.Column="0" Orientation="Horizontal" MouseLeftButtonUp="ProjectSelect_Click" Tag="{Binding Path}" Cursor="Hand" Background="Transparent">
+                                                    <TextBlock Text="📁 " Foreground="#4EC9B0" FontSize="12"/>
+                                                    <TextBlock Text="{Binding Name}" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="12" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding Branch, StringFormat=' ({0})', TargetNullValue='(main)'}" Foreground="#858585" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                                </StackPanel>
+                                                <Button Grid.Column="1" Content="&#xE70F;" Width="20" Height="18" Background="Transparent" Foreground="#FFA500" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="EditProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Edit"/>
+                                                <Button Grid.Column="2" Content="&#xE768;" Width="20" Height="18" Background="Transparent" Foreground="#4EC9B0" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="StartProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Play"/>
+                                                <Button Grid.Column="3" Content="&#xE71A;" Width="20" Height="18" Background="Transparent" Foreground="#CE9178" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="StopProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Stop"/>
+                                                <Button Grid.Column="4" Content="&#xE774;" Width="20" Height="18" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="ViewProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Open URL"/>
+                                                <Button Grid.Column="5" Content="&#xE74D;" Width="20" Height="18" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="RemoveProject_Click" Tag="{Binding Path}" Cursor="Hand" Margin="1,0" ToolTip="Delete"/>
                                             </Grid>
-                                        </Border>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
+                                            <Grid Margin="0,2,0,0">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Content="&#xE8B1;" Width="20" Height="18" Background="Transparent" Foreground="#4EC9B0" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitAdd_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Add"/>
+                                                <Button Grid.Column="1" Content="&#xE8C8;" Width="20" Height="18" Background="Transparent" Foreground="#DCDCAA" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitCommit_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Commit"/>
+                                                <Button Grid.Column="2" Content="&#xE898;" Width="20" Height="18" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitPush_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Push"/>
+                                                <Button Grid.Column="3" Content="&#xE895;" Width="20" Height="18" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitPull_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Git Pull"/>
+                                                <Button Grid.Column="4" Content="&#xE756;" Width="20" Height="18" Background="Transparent" Foreground="#DCDCAA" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="GitProjectCli_Click" Tag="{Binding Path}" Cursor="Hand" Margin="0,0,1,0" ToolTip="Open Git CLI"/>
+                                            </Grid>
+                                            <Border x:Name="CommitPanel" Background="#1E1E1E" CornerRadius="2" Padding="4" Margin="0,4,0,0" Visibility="Collapsed">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBox x:Name="CommitMessageInput" Grid.Column="0" Background="#252526" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="10" Padding="4,2" BorderThickness="1" BorderBrush="#3F3F46"/>
+                                                    <Button Grid.Column="1" Content="Commit" Width="40" Height="20" Background="#DCDCAA" Foreground="#1E1E1E" BorderThickness="0" FontSize="10" Click="GitCommitRun_Click" Tag="{Binding Path}" HorizontalAlignment="Right" Margin="4,0,0,0"/>
+                                                </Grid>
+                                            </Border>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
 
-            <GridSplitter Grid.Column="1" Grid.RowSpan="4" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
+            <GridSplitter Grid.Column="3" Grid.Row="1" Grid.RowSpan="4" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
 
+            <!-- Column 2: WebView -->
             <Border Grid.Row="1" Grid.Column="2" Background="#252526" Margin="0,10" CornerRadius="0" Padding="10">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -376,92 +379,115 @@
                 </Grid>
             </Border>
 
-            <GridSplitter Grid.Column="3" Grid.RowSpan="4" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
+            <GridSplitter Grid.Column="4" Grid.Row="1" Grid.RowSpan="4" Width="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
 
-            <Border Grid.Row="1" Grid.Column="4" Background="#252526" Margin="0,10,10,10" CornerRadius="0" Padding="10">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="System" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <Grid><TextBlock Text="RAM" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxRamPercent" Grid.Column="1" Text="0%" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
-                                <ProgressBar x:Name="MaxRamBar" Style="{StaticResource ProgressBarStyle}" Margin="0,8,0,5"/>
-                                <TextBlock x:Name="MaxRamDetails" Text="0 / 0 GB" Style="{StaticResource MetricLabel}" Foreground="#858585"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <Grid><TextBlock Text="CPU" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxCpuPercent" Text="0%" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
-                                <ProgressBar x:Name="MaxCpuBar" Style="{StaticResource ProgressBarStyle}" Margin="0,8,0,5"/>
-                                <TextBlock x:Name="MaxCpuDetails" Text="0%" Style="{StaticResource MetricLabel}" Foreground="#858585"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <Grid><TextBlock Text="Disk" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxDiskPercent" Text="0%" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
-                                <ProgressBar x:Name="MaxDiskBar" Style="{StaticResource ProgressBarStyle}" Margin="0,8,0,5"/>
-                                <TextBlock x:Name="MaxDiskDetails" Text="0 MB/s" Style="{StaticResource MetricLabel}" Foreground="#858585"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <Grid><TextBlock Text="Network" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxNetDetails" Text="0 MB/s" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
-                            </StackPanel>
-                        </Border>
-                        <Border Background="#252526" CornerRadius="0" Padding="12" Margin="0,0,0,10">
-                            <StackPanel>
-                                <TextBlock Text="Top Processes" Style="{StaticResource MetricLabel}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                <ItemsControl x:Name="TopProcessesMax">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="0,3,0,3">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="120"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="50"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="{Binding Name}" Foreground="#888" FontSize="11" TextTrimming="CharacterEllipsis"/>
-                                                <ProgressBar Grid.Column="1" Value="{Binding Percent}" Maximum="100" Height="6" Margin="5,0" Background="#333"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding Percent, StringFormat={}{0}%}" Foreground="#4EC9B0" FontSize="11" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-            </Border>
+            <!-- Column 4: System with nested grid for independent height -->
+            <Grid Grid.Row="1" Grid.Column="4" Margin="0,10,10,10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="5"/>
+                    <RowDefinition Height="200"/>
+                </Grid.RowDefinitions>
 
-            <Border Grid.Row="2" Grid.Column="4" Background="#252526" Margin="0,10,10,10" CornerRadius="0" Padding="10">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="30"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <Grid Grid.Row="0">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Vercel Logs" Foreground="#569CD6" FontFamily="Consolas" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
-                            <Button x:Name="RefreshVercelLogsBtn" Content="&#xE72C;" Width="20" Height="20" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="RefreshVercelLogs_Click" Cursor="Hand" Margin="10,0,0,0" ToolTip="Refresh"/>
-                            <Button x:Name="LiveVercelLogsBtn" Content="Live" Width="35" Height="20" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontFamily="Consolas" FontSize="10" Click="LiveVercelLogs_Click" Cursor="Hand" Margin="5,0,0,0" ToolTip="Live Stream"/>
+                <!-- System Info -->
+                <Border Grid.Row="0" Background="#252526" CornerRadius="0" Padding="10">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="System" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="14" FontWeight="Bold" Margin="0,0,0,10"/>
+                            <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <Grid><TextBlock Text="RAM" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxRamPercent" Grid.Column="1" Text="0%" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
+                                    <ProgressBar x:Name="MaxRamBar" Style="{StaticResource ProgressBarStyle}" Margin="0,8,0,5"/>
+                                    <TextBlock x:Name="MaxRamDetails" Text="0 / 0 GB" Style="{StaticResource MetricLabel}" Foreground="#858585"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <Grid><TextBlock Text="CPU" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxCpuPercent" Text="0%" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
+                                    <ProgressBar x:Name="MaxCpuBar" Style="{StaticResource ProgressBarStyle}" Margin="0,8,0,5"/>
+                                    <TextBlock x:Name="MaxCpuDetails" Text="0%" Style="{StaticResource MetricLabel}" Foreground="#858585"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <Grid><TextBlock Text="Disk" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxDiskPercent" Text="0%" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
+                                    <ProgressBar x:Name="MaxDiskBar" Style="{StaticResource ProgressBarStyle}" Margin="0,8,0,5"/>
+                                    <TextBlock x:Name="MaxDiskDetails" Text="0 MB/s" Style="{StaticResource MetricLabel}" Foreground="#858585"/>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#1E1E1E" CornerRadius="0" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <Grid><TextBlock Text="Network" Style="{StaticResource MetricLabel}" FontWeight="SemiBold"/><TextBlock x:Name="MaxNetDetails" Text="0 MB/s" Style="{StaticResource MetricValue}" HorizontalAlignment="Right"/></Grid>
+                                </StackPanel>
+                            </Border>
+                            <Border Background="#252526" CornerRadius="0" Padding="12" Margin="0,0,0,10">
+                                <StackPanel>
+                                    <TextBlock Text="Top Processes" Style="{StaticResource MetricLabel}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <ItemsControl x:Name="TopProcessesMax">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="0,3,0,3">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="120"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="50"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Name}" Foreground="#888" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                                    <ProgressBar Grid.Column="1" Value="{Binding Percent}" Maximum="100" Height="6" Margin="5,0" Background="#333"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Percent, StringFormat={}{0}%}" Foreground="#4EC9B0" FontSize="11" HorizontalAlignment="Right"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
-                    </Grid>
-                    <ScrollViewer Grid.Row="1" x:Name="VercelLogsScroll" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0">
-                        <TextBox x:Name="VercelLogsOutput" Text="Select a project with Vercel config to view logs" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" IsReadOnly="True" Background="#1E1E1E" BorderThickness="0"/>
                     </ScrollViewer>
-                    <Grid Grid.Row="2" Margin="0,5,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Status:" Foreground="#858585" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                        <TextBlock x:Name="VercelStatus" Grid.Column="1" Text="--" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center"/>
-                    </Grid>
-                </Grid>
-            </Border>
+                </Border>
 
+                <GridSplitter Grid.Row="1" Height="5" Background="#2D2D30" HorizontalAlignment="Stretch"/>
+
+                <!-- Vercel Logs -->
+                <Border Grid.Row="2" Background="#252526" CornerRadius="0" Padding="10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="30"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Row="0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Vercel Logs" Foreground="#569CD6" FontFamily="Consolas" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button x:Name="RefreshVercelLogsBtn" Content="&#xE72C;" Width="20" Height="20" Background="Transparent" Foreground="#569CD6" BorderThickness="0" FontFamily="Segoe MDL2 Assets" FontSize="10" Click="RefreshVercelLogs_Click" Cursor="Hand" Margin="10,0,0,0" ToolTip="Refresh"/>
+                                <Button x:Name="LiveVercelLogsBtn" Content="Live" Width="35" Height="20" Background="Transparent" Foreground="#F14C4C" BorderThickness="0" FontFamily="Consolas" FontSize="10" Click="LiveVercelLogs_Click" Cursor="Hand" Margin="5,0,0,0" ToolTip="Live Stream"/>
+                            </StackPanel>
+                        </Grid>
+                        <ScrollViewer Grid.Row="1" x:Name="VercelLogsScroll" VerticalScrollBarVisibility="Auto" Margin="0,5,0,0">
+                            <TextBox x:Name="VercelLogsOutput" Text="Select a project with Vercel config to view logs" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" IsReadOnly="True" Background="#1E1E1E" BorderThickness="0"/>
+                        </ScrollViewer>
+                        <Grid Grid.Row="2" Margin="0,5,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Status:" Foreground="#858585" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBlock x:Name="VercelStatus" Grid.Column="1" Text="--" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <GridSplitter Grid.Row="2"
+                          Grid.ColumnSpan="5"
+                          Height="5"
+                          Background="#2D2D30"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          ResizeDirection="Rows"
+                          ResizeBehavior="PreviousAndNext"/>
+
+            <!-- Timeline / Terminal / Network -->
             <Border Grid.Row="3" Grid.ColumnSpan="5" Background="#252526" Margin="10,0,10,10" CornerRadius="0" Padding="10">
                 <Grid>
                     <Grid.RowDefinitions>
@@ -502,7 +528,7 @@
                                     <RowDefinition Height="*"/>
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" x:Name="TerminalHeader" Text="Terminal - Select a project" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
+                                <TextBlock Grid.Row="0" x:Name="TerminalHeader" Text="Terminal" Foreground="#4EC9B0" FontFamily="Consolas" FontSize="11" FontWeight="SemiBold" Margin="5,3,0,0"/>
                                 <ScrollViewer Grid.Row="1" x:Name="TerminalScroll" VerticalScrollBarVisibility="Auto">
                                     <TextBlock x:Name="TerminalOutput" Text="Click a project to open terminal" Foreground="#858585" FontFamily="Consolas" FontSize="10" TextWrapping="Wrap" Margin="5"/>
                                 </ScrollViewer>
@@ -529,6 +555,7 @@
                 </Grid>
             </Border>
 
+            <!-- Status Bar -->
             <Border Grid.Row="4" Grid.ColumnSpan="5" Background="#2D2D30">
                 <Grid>
                     <Grid.ColumnDefinitions>
